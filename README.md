@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"github.com/scgywx/foog"
 	"github.com/scgywx/foog/server/ws"
+	sjson "github.com/scgywx/foog/serializer/json"
 )
 
 type MyRequest struct{
@@ -59,6 +60,7 @@ func main() {
 	app := &foog.Application{}
 	app.SetRouter(&MyRouter{})
 	app.SetServer(ws.NewServer())
+	app.SetSerializer(sjson.New())
 	app.Register(&Hello{})
 	app.Listen("127.0.0.1:9005")
 	app.Start()
