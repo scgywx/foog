@@ -5,7 +5,7 @@ foog is a lightweight game server framework.
 go get github.com/scgywx/foog
 ```
 
-## HelloWorld
+## Hello-Server(using websocket protocol)
 ```go
 package main
 
@@ -63,4 +63,13 @@ func main() {
 	app.Listen("127.0.0.1:9005")
 	app.Start()
 }
+```
+
+## Hello-Client
+```js
+ws = new window.WebSocket("ws://127.0.0.1:9005")
+ws.onmessage = function(v){
+	console.log(v)
+}
+ws.send('{"cmd":"Hello.Say","data":{"name":"test"}}')
 ```
