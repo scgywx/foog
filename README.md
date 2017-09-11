@@ -1,7 +1,7 @@
-foog是一个易使用、易扩展、轻量级的服务端框架，foog旨为解决基础建设，所以并没有包含其它业务相关的辅助库，这也使得他更为精简.
-易扩展的协议支持，内置tcp(2或者4bytes消息头+消息体)和websocket，仅需一行代码即可轻松实现协议切换，如果内置协议不满足需求，仅需要实现指定interface即可完成协议自定义.
-更自由的路由分发，根据不同的业务需求，设计属于自己路由规则，让一切动向全掌握在自己手中.
-可配置的序列化方式，json、pb你想用，随时可以自行配置，如不满足其需求，自行实现Encode和Decode后配置即可.
+foog是一个易使用、易扩展、轻量级的服务端框架，foog旨为解决基础建设，所以并没有包含其它业务相关的辅助库，这也使得他更为精简.  
+易扩展的协议支持，内置tcp(2或者4bytes消息头+消息体)和websocket，仅需一行代码即可轻松实现协议切换，如果内置协议不满足需求，仅需要实现指定interface即可完成协议自定义.  
+更自由的路由分发，根据不同的业务需求，设计属于自己路由规则，让一切动向全掌握在自己手中.  
+可配置的序列化方式，json、pb你想用，随时可以自行配置，如不满足其需求，自行实现Encode和Decode后配置即可.  
 
 ## Installation
 ```shell
@@ -121,17 +121,17 @@ type IConn interface{
 }
 ```
 
-应用已经监听了配置的端口，那么在IServer.Run实现部分仅需要accept，然后将接受到的连接以回调的方式传递给指定函数.
-当应用收到有新的连接，会直接调用IConn.ReadMessage，该方法直到收到一条完整的消息才会返回，那么协议、缓存、分包都需要在该方法内完成.
-当应用需要发消息就会调用IConn.WriteMessage，该方法需要实现协议打包、发送工作.
-IConn.Close实现关闭连接.
-IConn.GetRemoteAddr实现获取客户端IP和端口.
-具体的实现方式可参见server/tcp/server.go.
+应用已经监听了配置的端口，那么在IServer.Run实现部分仅需要accept，然后将接受到的连接以回调的方式传递给指定函数.  
+当应用收到有新的连接，会直接调用IConn.ReadMessage，该方法直到收到一条完整的消息才会返回，那么协议、缓存、分包都需要在该方法内完成.  
+当应用需要发消息就会调用IConn.WriteMessage，该方法需要实现协议打包、发送工作.  
+IConn.Close实现关闭连接.  
+IConn.GetRemoteAddr实现获取客户端IP和端口.  
+具体的实现方式可参见server/tcp/server.go.  
 
 ## Router
-每个应用必须设置一个Router用来处理请求分发，Router需要实现：HandleConnection、HandleClose、HandleMessage三个方法.
-HandleConnection和HandleClose在新连接和关闭连接时会调用，参数仅有一个Session.
-HandleMessage在收到消息会调用，方法有两个参数：session和data，返回三个参数：handleName, packet, error.
-handleName即在app.Register的时候注册的结构体对象，其规则是：小写(结构体名.方法名)，如Hello的Say方法，注册后的handleName为hello.say.
-packet即本次传给指定模块方法的参数，在满足下面三种情况下，将会自动将packet转换类型，1、设置了消息序列化；2、该参数是[]byte类型；3、目标方法第二个参数非[]byte类型.
-error则表示由路出错，不予分发.
+每个应用必须设置一个Router用来处理请求分发，Router需要实现：HandleConnection、HandleClose、HandleMessage三个方法.  
+HandleConnection和HandleClose在新连接和关闭连接时会调用，参数仅有一个Session.  
+HandleMessage在收到消息会调用，方法有两个参数：session和data，返回三个参数：handleName, packet, error.  
+handleName即在app.Register的时候注册的结构体对象，其规则是：小写(结构体名.方法名)，如Hello的Say方法，注册后的handleName为hello.say.  
+packet即本次传给指定模块方法的参数，在满足三个条件的情况下，将会自动转换packet类型，1、设置了消息序列化；2、该参数是[]byte类型；3、目标方法第二个参数非[]byte类型.  
+error则表示由路出错，不予分发.  
