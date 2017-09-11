@@ -91,7 +91,7 @@ app.Listen("127.0.0.1:9005")//监听端口 [必选]
 app.Start()//启动
 ```
 
-如果想启动多个应用，就实例化多个application，还可以实现不同端口使用不同协议，逻辑不变，手机使用tcp,网页使用websocket.
+如果想启动多个应用，就实例化多个application，还可以实现不同端口使用不同协议，同一套逻辑，手机使用tcp，网页使用websocket.
 
 ## Protocol
 内置tcp和websocket协议，而tcp采用消息头(2或者4字节)+消息体，消息头均使用大端模式，修改长度可用如下方式：
@@ -100,7 +100,7 @@ svr := tcp.NewServer()
 svr.SetHeadSize(2)//设置为2字节
 ```
 
-ws协议如果需要修改请求源检查函数，代码如下：
+ws协议默认会允许所有客户端连接，如果需要修改检查来源函数，代码如下：
 ```go
 svr := ws.NewServer()
 svr.SetCheckOriginFunc(func(r *http.Request) bool{
@@ -129,9 +129,28 @@ IConn.GetRemoteAddr实现获取客户端IP和端口.
 具体的实现方式可参见server/tcp/server.go.  
 
 ## Router
-每个应用必须设置一个Router用来处理请求分发，Router需要实现：HandleConnection、HandleClose、HandleMessage三个方法.  
-HandleConnection和HandleClose在新连接和关闭连接时会调用，参数仅有一个Session.  
+每个应用必须设置一个Router用来处理请求分发，Router需要实现IRouter的3个方法
+```go
+type IRouter interface{
+	HandleConnection(*Session)
+	HandleClose(*Session)
+	HandleMessage(*Session, []byte)(string, interface{}, error)
+}
+```
+HandleConnection和HandleClose分别在新连接和关闭连接时会调用，参数仅有一个Session.  
 HandleMessage在收到消息会调用，方法有两个参数：session和data，返回三个参数：handleName, packet, error.  
-handleName即在app.Register的时候注册的结构体对象，其规则是：小写(结构体名.方法名)，如Hello的Say方法，注册后的handleName为hello.say.  
-packet即本次传给指定模块方法的参数，在满足三个条件的情况下，将会自动转换packet类型，1、设置了消息序列化；2、该参数是[]byte类型；3、目标方法第二个参数非[]byte类型.  
+handleName即在app.Register的时候注册的结构体对象，其规则是：小写(结构体名.方法名)，如Hello的Say方法，注册后为hello.say.  
+packet即本次传给指定模块方法的参数，如果满足如下三个情况，将会自动转换packet类型，否则会原样传递到指定方法.  
+1、设置了消息序列化.   
+2、该参数是[]byte类型.  
+3、目标方法第二个参数非[]byte类型.  
 error则表示由路出错，不予分发.  
+
+## Serializer
+如果内置的序列化方式不满足需要，可以自行扩展，只需要实现ISerializer接口即可，然后配置即可.   
+```go
+type ISerializer interface{
+	Encode(interface{})([]byte, error)
+	Decode([]byte, interface{})(error)
+}
+```
