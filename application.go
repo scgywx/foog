@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"time"
-	"sync"
 )
 
 type Application struct{
@@ -18,8 +17,6 @@ type Application struct{
 	logFile string
 	logLevel int
 	handler handlerManager
-	sessions map[int64]*Session
-	mutexSess sync.Mutex
 }
 
 func (this *Application)Register(c IObject){
@@ -54,10 +51,6 @@ func (this *Application)SetId(id int){
 	this.id = id
 }
 
-func (this *Application)GetSessionById(sid int64)*Session{
-	return this.sessions[sid]
-}
-
 func (this *Application)Start(){
 	//init server
 	ls, err := net.Listen("tcp", this.listenAddr)
@@ -77,8 +70,6 @@ func (this *Application)Start(){
 		log.SetOutput(w)
 	}
 	
-	this.sessions = make(map[int64]*Session)
-	
 	log.Println("server started", this.listenAddr)
 	this.server.Run(ls, this.handleConnection)
 }
@@ -87,20 +78,10 @@ func (this *Application)handleConnection(conn IConn){
 	sess := NewSession(conn, this.id)
 	sess.serializer = this.serializer
 
-	this.mutexSess.Lock()
-	this.sessions[sess.Id] = sess	
-	this.mutexSess.Unlock()
-
-	defer func(){
-		this.mutexSess.Lock()
-		delete(this.sessions, sess.Id)
-		this.mutexSess.Unlock()
-		conn.Close()
-	}()
+	defer conn.Close()
 	defer this.router.HandleClose(sess)
 	
 	this.router.HandleConnection(sess)
-
 	for{
 		msg, err := conn.ReadMessage()
 		if err != nil{

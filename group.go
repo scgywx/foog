@@ -1,81 +1,77 @@
 package foog
 
-type groupEntity struct{
-	name string
+import(
+	"sync"
+	"errors"
+)
+
+type Group struct {
+	mutex sync.RWMutex
+	once sync.Once
 	members map[int64]*Session
 }
 
-type Group struct {
-	groups map[string]*groupEntity
-}
+var (
+	errMemberNotFound = errors.New("member not found")
+)
 
 func NewGroup()*Group{
 	group := &Group{
-		groups: make(map[string]*groupEntity),
+		members: make(map[int64]*Session),
 	}
 	return group
 }
 
-func (this *Group)getGroup(name string)*groupEntity{
-	grp, ok := this.groups[name]
-	if !ok {
-		grp = &groupEntity{
-			name: name,
-			members: make(map[int64]*Session),
-		}
+func (this *Group)Join(sess *Session){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	
+	this.members[sess.Id] = sess
+}
+
+func (this *Group)Leave(sess *Session){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	
+	delete(this.members, sess.Id)
+}
+
+func (this *Group)Clean(){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	
+	this.members = make(map[int64]*Session)
+}
+
+func (this *Group)Member(sid int64)(*Session, error){
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+	
+	mem, ok := this.members[sid]
+	if ok {
+		return mem, nil
 	}
-	return grp
+	
+	return nil, errMemberNotFound
 }
 
-func (this *Group)Join(name string, sess *Session){
-	grp := this.getGroup(name)
-	grp.members[sess.Id] = sess
-}
-
-func (this *Group)Leave(name string, sess *Session){
-	grp := this.getGroup(name)
-	delete(grp.members, sess.Id)
-}
-
-func (this *Group)Clean(name string){
-	delete(this.groups, name)
-}
-
-func (this *Group)Members(name string)([]*Session){
+func (this *Group)Members()([]*Session){
 	members := []*Session{}
-	grp, ok := this.groups[name]
-	if ok{
-		for _, s := range grp.members {
-			members = append(members, s)
-		}
+	for _, v := range this.members {
+		members = append(members, v)
 	}
 	return members
 }
 
-func (this *Group)Broadcast(name string, msg interface{}){
-	grp, ok := this.groups[name]
-	if !ok{
-		return 
-	}
-
-	for _,v := range grp.members{
+func (this *Group)Broadcast(msg interface{}){
+	for _,v := range this.members{
 		v.WriteMessage(msg)
 	}
 }
 
-func (this *Group)BroadcastWithoutSession(name string, msg interface{}, filters []*Session){
-	grp, ok := this.groups[name]
-	if !ok{
-		return 
-	}
-
-	skip := make(map[int64]bool)
-	for _,s := range filters{
-		skip[s.Id] = true
-	}
-
-	for k,v := range grp.members{
-		if _, ok := skip[k]; !ok{
+func (this *Group)BroadcastWithoutSession(msg interface{}, filters map[int64]bool){
+	for k,v := range this.members{
+		if _, ok := filters[k]; !ok{
 			v.WriteMessage(msg)
 		}
 	}
