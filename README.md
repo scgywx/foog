@@ -32,7 +32,7 @@ type MyResponse struct{
 type MyRouter struct{
 }
 
-func (this *MyRouter)HandleConnection(sess *foog.Session){
+func (this *MyRouter)HandleAccept(sess *foog.Session){
 	fmt.Printf("new client from %s, #%d\n", sess.Conn.GetRemoteAddr(), sess.Id)
 }
 
@@ -40,7 +40,7 @@ func (this *MyRouter)HandleClose(sess *foog.Session){
 	fmt.Printf("client close #%d\n", sess.Id)
 }
 
-func (this *MyRouter)HandleMessage(sess *foog.Session, msg []byte)(string, interface{}, error){
+func (this *MyRouter)HandleRead(sess *foog.Session, msg []byte)(string, interface{}, error){
 	req := &MyRequest{}
 	json.Unmarshal(msg, req)
 	return req.Cmd, req, nil
@@ -59,19 +59,17 @@ func handle_Hello_Say(ctx *foog.Context){
 	req := ctx.Data.(*MyRequest)
 	res := &MyResponse{
 		Cmd: req.Cmd,
-		Data: SayResult{
+		Data: &SayResult{
 			Text: fmt.Sprintf("hello %s", req.Data["name"]),
-		}
+		},
 	}
-	sess.Send(res)
+	ctx.Sess.Send(res)
 }
 
 func main() {
-	foog.SetWorkerNum(2) //设置最大工作线程
 	foog.SetNodeId(1)    //设置节点ID，用于UUID生成
-	foog.SetLogLevel(1)  //日志级别
-	foog.SetLogFile("game.log") //日志路径
-	foog.SetRouter(newRouter()) //自定义Router
+	foog.SetWorkerNum(2) //设置最大工作线程
+	foog.SetRouter(&MyRouter{}) //自定义Router
 	foog.Bind("Hello.Say", handle_Hello_Say) 
 	foog.Init()  //初始化框架
 	foog.RunServer(":8888", ws.NewServer())//启动服务
@@ -82,9 +80,9 @@ func main() {
 ```js
 ws = new window.WebSocket("ws://127.0.0.1:8888")
 ws.onmessage = function(v){
-	console.log(v)
+	console.log(v.data)
 }
-ws.send('{"cmd":"Hello.Say","data":{"name":"test"}}')
+ws.send('{"cmd":"Hello.Say","data":{"name":"foog"}}')
 ```
 
 ## Router
