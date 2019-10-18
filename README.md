@@ -1,7 +1,6 @@
 foog是一个易使用、易扩展、轻量级的服务端框架，foog旨为解决基础建设，所以并没有包含其它业务相关的辅助库，这也使得他更为精简.  
 易扩展的协议支持，内置tcp(2或者4bytes消息头+消息体)和websocket，仅需一行代码即可轻松实现协议切换，如果内置协议不满足需求，仅需要实现指定interface即可完成协议自定义.  
-更自由的路由分发，根据不同的业务需求，设计属于自己路由规则，让一切动向全掌握在自己手中.  
-可配置的序列化方式，json、pb你想用，随时可以自行配置，如不满足其需求，自行实现Encode和Decode后配置即可.  
+更自由的路由分发，根据不同的业务需求，设计属于自己路由规则，让一切动向全掌握在自己手中.   
 
 ## Installation
 ```shell
@@ -135,12 +134,3 @@ IConn.Close实现关闭连接.
 IConn.GetRemoteAddr实现获取客户端IP和端口.  
 IConn.GetServer返回当前服务器指针
 具体的实现方式可参见server/tcp/server.go 与 server/tcp/conn.go
-
-## Serializer
-如果内置的序列化方式不满足需要，可以自行扩展，只需要实现ISerializer接口即可，然后配置即可.   
-```go
-type ISerializer interface{
-	Encode(interface{})([]byte, error)
-	Decode([]byte, interface{})(error)
-}
-```
