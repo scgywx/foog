@@ -7,10 +7,7 @@ import (
 
 var errWrongValueType = errors.New("protobuf: convert on wrong type value")
 
-type ProtobufSerializer struct{}
-
-func New()*ProtobufSerializer{
-	return &ProtobufSerializer{}
+type ProtobufSerializer struct{
 }
 
 func (s *ProtobufSerializer) Encode(v interface{}) ([]byte, error) {

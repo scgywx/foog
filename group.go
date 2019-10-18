@@ -65,14 +65,14 @@ func (this *Group)Members()([]*Session){
 
 func (this *Group)Broadcast(msg interface{}){
 	for _,v := range this.members{
-		v.WriteMessage(msg)
+		v.Send(msg)
 	}
 }
 
 func (this *Group)BroadcastWithoutSession(msg interface{}, filters map[int64]bool){
 	for k,v := range this.members{
 		if _, ok := filters[k]; !ok{
-			v.WriteMessage(msg)
+			v.Send(msg)
 		}
 	}
 }

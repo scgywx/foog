@@ -1,7 +1,8 @@
 package foog
 
 type IRouter interface{
-	HandleConnection(*Session)
-	HandleClose(*Session)
-	HandleMessage(*Session, []byte)(string, interface{}, error)
+	HandleAccept(sess *Session)
+	HandleRead(sess *Session, data []byte)(string, interface{}, error)
+	HandleWrite(sess *Session, msg interface{})([]byte, error)
+	HandleClose(sess *Session)
 }

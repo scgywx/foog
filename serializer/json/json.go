@@ -6,10 +6,6 @@ import (
 
 type JsonSerializer struct{}
 
-func New()*JsonSerializer{
-	return &JsonSerializer{}
-}
-
 func (this *JsonSerializer)Encode(v interface{})([]byte, error){
 	return json.Marshal(v)
 }

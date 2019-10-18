@@ -1,45 +1,38 @@
 package foog
 
 import(
-	"time"
+	"log"
+	"github.com/scgywx/foog/utils"
 )
 
 type Session struct {
-	serializer ISerializer
 	Id int64
 	Conn IConn
 	LastTime int64
+	Closed bool
 	Data interface{}
 }
 
-var counter int64 = 0
-
-/**
- * 1位符号
- * 31位时间戳(最大可表示到2038年)
- * 10位毫秒
- * 10位服务器ID(最大可表示1024)
- * 12位自增id(最大值是4096)
- * 共64位，每秒可生成400w条不同ID
- */
-func NewSession(conn IConn, appId int)*Session{
-	counter++
+func NewSession(conn IConn)*Session{
 	sess := &Session{
-		Id: ((time.Now().UnixNano() / 1000000) << 22) | int64((appId & 0x3ff) << 12) | (counter & 0xfff),
+		Id: utils.UUID(),
 		Conn: conn,
 	}
 	return sess
 }
 
-func (this *Session)WriteMessage(data interface{}) error{
-	if msg, ok := data.([]byte); ok || this.serializer == nil{
-		return this.Conn.WriteMessage(msg)
-	}else{
-		bytes, err := this.serializer.Encode(data)
-		if err != nil{
-			return err
-		}
-
-		return this.Conn.WriteMessage(bytes)
+func (this *Session)Send(res interface{}) error{
+	data, err := router.HandleWrite(this, res)
+	if err != nil{
+		log.Println("router handle send failed", err)
+		return err
 	}
+
+	return this.Conn.Send(data)
 }
+
+func (this *Session)Close(){
+	this.Closed = true
+	this.Conn.Close()
+}
+
