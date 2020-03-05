@@ -67,7 +67,6 @@ func handle_Hello_Say(ctx *foog.Context){
 
 func main() {
 	foog.SetNodeId(1)    //设置节点ID，用于UUID生成
-	foog.SetWorkerNum(2) //设置最大工作线程
 	foog.SetRouter(&MyRouter{}) //自定义Router
 	foog.Bind("Hello.Say", handle_Hello_Say) 
 	foog.Init()  //初始化框架
