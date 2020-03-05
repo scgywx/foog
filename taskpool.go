@@ -42,7 +42,7 @@ func (this *TaskPool)Post(data interface{}, fn taskFn)error{
 func (this *TaskPool)postRaw(data interface{}, done chan error, fn taskFn)error{
 	var err error
 
-	if workerNum > 0{
+	if this.workerNum > 0{
 		this.queue <- &taskEntity{
 			fn: fn,
 			data: data,

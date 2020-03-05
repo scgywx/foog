@@ -13,7 +13,6 @@ var (
 	router IRouter
 	logFile string
 	logLevel int
-	workerNum int
 	handlers map[string]handlerFunc
 	componentList []IComponent
 )
@@ -24,10 +23,6 @@ func SetNodeId(id int){
 
 func SetRouter(r IRouter){
 	router = r
-}
-
-func SetWorkerNum(n int){
-	workerNum = n
 }
 
 func SetLogLevel(level int){
@@ -45,8 +40,6 @@ func Init(){
 		log.Println("init log error", err)
 		os.Exit(0)
 	}
-
-	initWorker()
 	
 	if err = initComponent(); err != nil{
 		log.Println("init component error", err)

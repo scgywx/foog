@@ -44,61 +44,45 @@ func handleConnection(conn IConn){
 	var (
 		sess *Session
 		err error
-		data []byte
+		msg []byte
 	)
 
 	sess = NewSession(conn)
 	defer sess.Close()
 	
-	wp.Post(nil, func(interface{}) error{
-		router.HandleAccept(sess)
-		return nil
-	})
+	router.HandleAccept(sess)
 	
 	for{
-		data, err = sess.Conn.Recv()
+		msg, err = sess.Conn.Recv()
 		if err != nil{
 			log.Println("read message error", err)
 			break
 		}
 		
-		t := &servertask{
-			sess: sess,
-			data: data,
-		}
-		err = wp.Post(t, handleRead)
+		err = handleRead(sess, msg)
 		if err != nil{
 			log.Println("handle message error", err)
 		}
 	}
 	
-	wp.Post(nil, func(interface{}) error{
-		router.HandleClose(sess)
-		return nil
-	})
+	router.HandleClose(sess)
 }
 
-func handleRead(arg interface{}) error{
-	task := arg.(*servertask)
-	cmd, data, err := router.HandleRead(task.sess, task.data)
+func handleRead(sess *Session, msg []byte) error{
+	cmd, data, err := router.HandleRead(sess, msg)
 	if err != nil{
 		return err
 	}
 
 	err = Dispatch(cmd, &Context{
-		Sess: task.sess,
+		Sess: sess,
 		Data: data,
 	})
 	if err != nil{
 		return err
 	}
 
-	task.sess.LastTime = time.Now().Unix()
+	sess.LastTime = time.Now().Unix()
 
 	return nil
-}
-
-func initWorker(){
-	wp = NewTaskPool(workerNum, 0)
-	wp.Start()
 }
